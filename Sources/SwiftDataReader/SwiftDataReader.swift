@@ -68,14 +68,6 @@ public struct DataReader {
       return nil
     }
     
-    // The old way - to be removed
-//    withUnsafeMutableBytes(of: &value) { valuePtr in
-//      data[start..<end].withUnsafeBytes { dataPtr in
-//        valuePtr.copyMemory(from: dataPtr)
-//
-//      }
-//    }
-//
     // TODO: fix replace deprecated method usage
     data[start..<end].withUnsafeBytes { bytes in
       let count = (end - start) / MemoryLayout<T>.stride
@@ -96,12 +88,6 @@ public struct DataReader {
     guard end <= data.endIndex else {
       return nil
     }
-
-    // TODO: fix replace deprecated method usage
-//    data[start..<end].withUnsafeBytes { bytes in
-//      let count = (end - start) / MemoryLayout<T>.stride
-//      valuePtr.initialize(from: bytes, count: count)
-//    }
     
     data[start..<end].withUnsafeBytes { dataPtr in
       valuePtr.initialize(from: dataPtr, count: elementCount)
@@ -144,35 +130,3 @@ public struct DataReader {
     position >= data.endIndex
   }
 }
-
-// TODO: remove, obsolete
-/// A protocol which indicates that a particular type can be
-/// constructed to some default state and which does not require
-/// any arguments to its constructor to do so.
-///
-/// Example: `Int() == 0`
-///
-/// This protocol is implemented for many primitive types by the
-/// swift compiler. For custom types, the only requirement is to
-/// implement a constructor which accepts no arguments.
-//public protocol DefaultInitializable {
-//  init()
-//}
-//
-//extension Character: DefaultInitializable {
-//  public init() {
-//    self.init(UnicodeScalar(1)!)
-//  }
-//}
-//extension UInt8: DefaultInitializable {}
-//extension Int8: DefaultInitializable {}
-//extension UInt16: DefaultInitializable {}
-//extension Int16: DefaultInitializable {}
-//extension UInt32: DefaultInitializable {}
-//extension Int32: DefaultInitializable {}
-//extension UInt64: DefaultInitializable {}
-//extension Int64: DefaultInitializable {}
-//extension UInt: DefaultInitializable {}
-//extension Int: DefaultInitializable {}
-//extension Float32: DefaultInitializable {}
-//extension Float64: DefaultInitializable {}
