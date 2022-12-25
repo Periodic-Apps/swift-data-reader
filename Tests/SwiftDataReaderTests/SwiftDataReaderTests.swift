@@ -102,8 +102,13 @@ final class SwiftDataReaderTests: XCTestCase {
   }
   
   func testReadArrays() {
-    let reader = DataReader(data: Data([1,0,0,0, 2,0,0,0, 3,0,0,0, 4,0,0,0]))
+    var reader = DataReader(data: Data([1,0,0,0, 2,0,0,0, 3,0,0,0, 4,0,0,0]))
     let value: [Int32] = reader.peekValue(count: 3)!
     XCTAssertEqual(value, [1,2,3])
+            
+    let value1: [Int32] = reader.readValue(count: 2)!
+    let value2: [Int32] = reader.readValue(count: 2)!
+    XCTAssertEqual(value1, [1,2])
+    XCTAssertEqual(value2, [3,4])
   }
 }

@@ -77,6 +77,14 @@ public struct DataReader {
     return valuePtr.pointee
   }
   
+  public mutating func readValue<T>(count elementCount: Int) -> [T]? {
+    defer {
+      position += (elementCount * MemoryLayout<T>.size)
+    }
+
+    return peekValue(count: elementCount)
+  }
+  
   /// Read an `Array` of `T` instances with length `count`
   /// If the entire array cannot be read `nil` is returned
   public func peekValue<T>(count elementCount: Int) -> [T]? {
