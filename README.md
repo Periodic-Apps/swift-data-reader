@@ -45,8 +45,34 @@ let reader = DataReader(data: Data([1,0,0,0, 2,0,0,0, 3,0,0,0, 4,0,0,0]))
 let value: [Int32] = reader.peekValue(count: 3)!
 ```
 
+### Enums
+
+Enums that conform to `RawRepresentable` can be read directly.
+
+```swift
+enum MyEnum: UInt8 {
+  case ten = 10
+  case twenty = 20
+}
+
+let reader = DataReader(data: Data([10, 20]))
+let value = reader.peekValue(type: MyEnum.self)! // => .ten
+```
+
+
 ### Custom Types
 
+Some, but not all custom types can be read directly. Notably, structs 
+which contain enums that conform to `RawRepresentable` *cannot*
+be read directly if the raw values of enums are not contiugous and 0-based. 
+This is a reminder that in the end, the success or failure of a read operation
+is highly dependent on how the compiler chooses to represent a given type
+in memory and whether the data being read is already in that form.
+
+It is likely that such in-memory representations could change between
+compiler versions and should not be relied upon. For this reason it 
+is better to stick with reading individual scalar values.  
+ 
 ```swift
 struct Foo: DefaultInitializable, Equatable {
   var x: Int32 = 0

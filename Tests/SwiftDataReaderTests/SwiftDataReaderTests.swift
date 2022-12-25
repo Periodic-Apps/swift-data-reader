@@ -89,6 +89,22 @@ final class SwiftDataReaderTests: XCTestCase {
     XCTAssertEqual(f, Foo(x: 1, y: 2))
   }
   
+  // test what happens when the stride length of a type is less
+  // the size. 
+  func testSizeLessThanStride() {
+    struct Key: Equatable {
+      let x: Int32
+      let z: Int32
+      let tag: UInt8
+    }
+    
+    print(MemoryLayout<Key>.size)
+    print(MemoryLayout<Key>.stride)
+    var reader = DataReader(data: Data([255,255,255,255, 1,0,0,0, 47,0,0,0]))
+    let f: Key = reader.readValue()!
+    XCTAssertEqual(f, Key(x: -1, z: 1, tag: 47))
+  }
+  
   func testReadChar() {
     let reader = DataReader(data: Data([43, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]))
     let c: Character? = reader.peekValue()
@@ -110,5 +126,23 @@ final class SwiftDataReaderTests: XCTestCase {
     let value2: [Int32] = reader.readValue(count: 2)!
     XCTAssertEqual(value1, [1,2])
     XCTAssertEqual(value2, [3,4])
+  }
+  
+  func testReadEnums() {
+    enum MyEnum: UInt8 {
+      case ten = 10
+      case twenty = 20
+      case thirty = 30
+      
+    }
+    
+    var reader = DataReader(data: Data([20, 30, 10]))
+    let first: MyEnum? = reader.readValue()
+    let second = reader.readValue(type: MyEnum.self)
+    let third = reader.readValue(type: MyEnum.self)
+    XCTAssertEqual(first, .twenty)
+    XCTAssertEqual(second, .thirty)
+    XCTAssertEqual(third, .ten)
+    XCTAssertNil(read(for: MyEnum.self, from: &reader))
   }
 }

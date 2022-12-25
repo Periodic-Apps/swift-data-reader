@@ -50,7 +50,38 @@ public struct DataReader {
 
     return peekValue()
   }
+  
+  /// Read an array of values for an inferred type `T` from the data.
+  /// If `count` values cannot be read `nil` is returned
+  public mutating func readValue<T>(count elementCount: Int) -> [T]? {
+    defer {
+      position += (elementCount * MemoryLayout<T>.size)
+    }
 
+    return peekValue(count: elementCount)
+  }
+      
+  /// Read a `String` with length `count`.
+  @available(macOS 11.0, *)
+  @available(iOS 14.0, *)
+  public mutating func readValue(count byteCount: Int) -> String? {
+    defer {
+      position += byteCount
+    }
+
+    return peekValue(count: byteCount)
+  }
+  
+  /// Peek into the data to read a type which conform to `RawRepresentable`
+  /// This is typically used by enum types.
+  public mutating func readValue<T>(type: T.Type = T.self) -> T? where T: RawRepresentable {
+    defer {
+      position += MemoryLayout<T.RawValue>.size
+    }
+
+    return peekValue()
+  }
+    
   /// Peek into the Data for the inferred type `T` to see what it's value
   /// is without consuming the data. If a value of type cannot be read
   /// `nil` is returned.
@@ -70,23 +101,16 @@ public struct DataReader {
     
     // TODO: fix replace deprecated method usage
     data[start..<end].withUnsafeBytes { bytes in
-      let count = (end - start) / MemoryLayout<T>.stride
+      let count = (end - start) / MemoryLayout<T>.size // shouldn't this also be 1?
       valuePtr.initialize(from: bytes, count: count)
     }
     
     return valuePtr.pointee
   }
   
-  public mutating func readValue<T>(count elementCount: Int) -> [T]? {
-    defer {
-      position += (elementCount * MemoryLayout<T>.size)
-    }
-
-    return peekValue(count: elementCount)
-  }
-  
-  /// Read an `Array` of `T` instances with length `count`
-  /// If the entire array cannot be read `nil` is returned
+  /// Read an `Array` of `T` instances with length `count` without
+  /// advancing the position in the data. If the entire array cannot
+  /// be read `nil` is returned
   public func peekValue<T>(count elementCount: Int) -> [T]? {
     let valuePtr = UnsafeMutablePointer<T>.allocate(capacity: elementCount)
     
@@ -106,16 +130,11 @@ public struct DataReader {
     return array
   }
     
-  /// Read a `String` with length `count`.
-  public mutating func readValue(count byteCount: Int) -> String? {
-    defer {
-      position += byteCount
-    }
-
-    return peekValue(count: byteCount)
-  }
-  
-  public func peekValue(count byteCount: Int) -> String? {    
+  /// Peek into the Data for a `String` of byte length `count` without
+  /// consuming the data. If a value of type cannot be read `nil` is returned.
+  @available(macOS 11.0, *)
+  @available(iOS 14.0, *)
+  public func peekValue(count byteCount: Int) -> String? {
     let start = position
     let end = position + /* MemoryLayout<String>.size * */ byteCount // sus
     
@@ -129,6 +148,29 @@ public struct DataReader {
       }
     }
     
+    return value
+  }
+  
+  /// Peek into the data to read a type which conform to `RawRepresentable`
+  /// This is typically used by enum types.
+  public func peekValue<T: RawRepresentable>() -> T? {
+    let start = position
+    let end = position * MemoryLayout<T.RawValue>.size
+    
+    guard end <= data.endIndex else {
+      return nil
+    }
+    
+    let valuePtr = UnsafeMutablePointer<T.RawValue>.allocate(capacity: 1)
+    defer {
+      valuePtr.deallocate()
+    }
+    
+    data[start..<end].withUnsafeBytes { bytes in
+      valuePtr.initialize(from: bytes, count: 1)
+    }
+    
+    let value = T(rawValue: valuePtr.pointee)
     return value
   }
   
